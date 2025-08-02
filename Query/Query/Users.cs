@@ -1,76 +1,102 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Query.Models;
+using Query.Data;
 
 namespace Query
 {
-    public static class Users
+    public class UsersService
     {
-        public static int CreateUser(Models.User user)
+        private readonly AppDbContext _context;
+
+        public UsersService(AppDbContext context)
         {
-            return Sql.ExecuteScalar<int>(
-                "User_Create",
-                new { user.name, user.email, user.password, user.photo, user.usertype }
-            );
+            _context = context;
         }
 
-        public static Models.User AuthenticateUser(string email, string password)
+        public int CreateUser(User user)
         {
-            var list = Sql.Populate<Models.User>("User_Authenticate",
-                new { email, password }
-            );
-            if (list.Count > 0) { return list[0]; }
-            return null;
+            _context.Users.Add(user);
+            _context.SaveChanges();
+            return user.userId;
         }
 
-        public static Models.User AuthenticateUser(string token)
+        public User AuthenticateUser(string email, string password)
         {
-            var list = Sql.Populate<Models.User>("User_AuthenticateByToken",new { token });
-            if (list.Count > 0) { return list[0]; }
-            return null;
+            return _context.Users
+                .FirstOrDefault(u => u.email == email && u.password == password && u.active);
         }
 
-        public static string CreateAuthToken(int userId, int expireDays = 30)
+        public User AuthenticateUser(string token)
         {
-            return Sql.ExecuteScalar<string>("User_CreateAuthToken",
-                new { userId, expireDays }
-            );
+            var now = DateTime.UtcNow;
+            return _context.AuthTokens
+                .Include(t => t.User)
+                .Where(t => t.Token == token && t.ExpiresAt > now && t.User.active)
+                .Select(t => t.User)
+                .FirstOrDefault();
         }
 
-        public static void UpdatePassword(int userId, string password)
+        public string CreateAuthToken(int userId, int expireDays = 30)
         {
-            Sql.ExecuteNonQuery("User_UpdatePassword",
-                new { userId, password }
-            );
+            var token = Guid.NewGuid().ToString("N");
+            var authToken = new AuthToken
+            {
+                UserId = userId,
+                Token = token,
+                ExpiresAt = DateTime.UtcNow.AddDays(expireDays)
+            };
+            _context.AuthTokens.Add(authToken);
+            _context.SaveChanges();
+            return token;
         }
 
-        public static string GetEmail(int userId)
+        public void UpdatePassword(int userId, string password)
         {
-            return Sql.ExecuteScalar<string>("User_GetEmail",
-                new { userId }
-            );
+            var user = _context.Users.Find(userId);
+            if (user != null)
+            {
+                user.password = password;
+                _context.SaveChanges();
+            }
         }
 
-        public static string GetPassword(string email)
+        public string GetEmail(int userId)
         {
-            return Sql.ExecuteScalar<string>("User_GetPassword",
-                new { email }
-            );
+            return _context.Users
+                .Where(u => u.userId == userId)
+                .Select(u => u.email)
+                .FirstOrDefault();
         }
 
-        public static void UpdateEmail(int userId, string email)
+        public string GetPassword(string email)
         {
-            Sql.ExecuteNonQuery("User_UpdateEmail",
-                new { userId, email }
-            );
+            return _context.Users
+                .Where(u => u.email == email)
+                .Select(u => u.password)
+                .FirstOrDefault();
         }
 
-        public static bool HasPasswords()
+        public void UpdateEmail(int userId, string email)
         {
-            return Sql.ExecuteScalar<int>("Users_HasPasswords") == 1;
+            var user = _context.Users.Find(userId);
+            if (user != null)
+            {
+                user.email = email;
+                _context.SaveChanges();
+            }
         }
 
-        public static bool HasAdmin()
+        public bool HasPasswords()
         {
-            return Sql.ExecuteScalar<int>("Users_HasAdmin") == 1;
+            return _context.Users.Any(u => !string.IsNullOrEmpty(u.password));
+        }
+
+        public bool HasAdmin()
+        {
+            // Assuming usertype admin is some specific value, e.g., 1
+            return _context.Users.Any(u => u.usertype == 1);
         }
     }
 }

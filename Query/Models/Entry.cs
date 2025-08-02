@@ -18,5 +18,6 @@ namespace Query.Models
         public string author { get; set; } // nvarchar(64)
         public string auther_email { get; set; } // nvarchar(64)
         public bool author_photo { get; set; } // bit
+        public bool isTrashed { get; set; }
     }
 }

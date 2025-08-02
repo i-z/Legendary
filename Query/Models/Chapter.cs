@@ -6,5 +6,6 @@
         public int chapter { get; set; } // int
         public string title { get; set; } // nvarchar(255)
         public string summary { get; set; } // nvarchar(255)
+        public bool isTrashed { get; set; }
     }
 }

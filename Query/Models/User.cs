@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Query.Models
 {
@@ -12,5 +13,7 @@ namespace Query.Models
         public bool photo { get; set; }
         public bool active { get; set; }
         public DateTime datecreated { get; set; }
+
+        public ICollection<AuthToken> Tokens { get; set; }
     }
 }

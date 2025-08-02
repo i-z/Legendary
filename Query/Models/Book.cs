@@ -7,5 +7,6 @@
         public string title { get; set; } // nvarchar(255)
         public bool favorite { get; set; } // bit
         public int sort { get; set; } // int
+        public bool isTrashed { get; set; }
     }
 }

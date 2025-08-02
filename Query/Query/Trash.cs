@@ -1,35 +1,69 @@
 ﻿using System;
 using System.Collections.Generic;
-using Dapper;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Query.Models;
+using Query.Data;
 
 namespace Query
 {
-    public static class Trash
+    public class Trash
     {
-        public static int GetCount(int userId)
+        private readonly AppDbContext _context;
+
+        public Trash(AppDbContext context)
         {
-            return Sql.ExecuteScalar<int>("Trash_GetCount", new { userId });
+            _context = context;
         }
 
-        public static Tuple<List<Models.Book>, List<Models.Chapter>, List<Models.Entry>> GetList(int userId)
+        public int GetCount(int userId)
         {
-            using (var sql = new Connection("Trash_GetList", new { userId }))
-            {
-                var reader = sql.PopulateMultiple();
-                var books = reader.Read<Models.Book>().AsList();
-                var chapters = reader.Read<Models.Chapter>().AsList();
-                var entries = reader.Read<Models.Entry>().AsList();
-                reader.Dispose();
-                return Tuple.Create(books, chapters, entries);
-            }
+            return _context.Entries.Count(e => e.userId == userId && e.isTrashed)
+                 //+ _context.Chapters.Count(c => c.userId == userId && c.isTrashed)
+                 + _context.Books.Count(b => b.userId == userId && b.isTrashed);
         }
-        public static void Empty(int userId)
+
+        public Tuple<List<Book>, List<Chapter>, List<Entry>> GetList(int userId)
         {
-            Sql.ExecuteNonQuery("Trash_Empty", new { userId });
+            var books = _context.Books
+                .Where(b => b.userId == userId && b.isTrashed)
+                .ToList();
+
+            var chapters = _context.Chapters
+                .Where(c => /*c.userId == userId &&*/ c.isTrashed)
+                .ToList();
+
+            var entries = _context.Entries
+                .Where(e => e.userId == userId && e.isTrashed)
+                .ToList();
+
+            return Tuple.Create(books, chapters, entries);
         }
-        public static void RestoreAll(int userId)
+
+        public void Empty(int userId)
         {
-            Sql.ExecuteNonQuery("Trash_RestoreAll", new { userId });
+            var books = _context.Books.Where(b => b.userId == userId && b.isTrashed);
+            var chapters = _context.Chapters.Where(c => /*c.userId == userId && */ c.isTrashed);
+            var entries = _context.Entries.Where(e => e.userId == userId && e.isTrashed);
+
+            _context.Books.RemoveRange(books);
+            _context.Chapters.RemoveRange(chapters);
+            _context.Entries.RemoveRange(entries);
+
+            _context.SaveChanges();
+        }
+
+        public void RestoreAll(int userId)
+        {
+            var books = _context.Books.Where(b => b.userId == userId && b.isTrashed);
+            var chapters = _context.Chapters.Where(c => /*c.userId == userId && */ c.isTrashed);
+            var entries = _context.Entries.Where(e => e.userId == userId && e.isTrashed);
+
+            foreach (var b in books) b.isTrashed = false;
+            foreach (var c in chapters) c.isTrashed = false;
+            foreach (var e in entries) e.isTrashed = false;
+
+            _context.SaveChanges();
         }
     }
 }

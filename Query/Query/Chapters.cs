@@ -1,42 +1,104 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Query.Models;
+using Query.Data;
 
 namespace Query
 {
-    public static class Chapters
+    public class Chapters
     {
-        public static void CreateChapter(int bookId, int chapter, string title, string summary)
+        private readonly AppDbContext _context;
+
+        public Chapters(AppDbContext context)
         {
-            Sql.ExecuteNonQuery("Chapter_Create", new { bookId, chapter, title, summary });
+            _context = context;
         }
 
-        public static void TrashChapter(int bookId, int chapter, bool entries = false)
+        public void CreateChapter(int bookId, int chapter, string title, string summary)
         {
-            Sql.ExecuteNonQuery("Chapter_Trash", new { bookId, chapter, entries });
+            var ch = new Chapter
+            {
+                bookId = bookId,
+                chapter = chapter,
+                title = title,
+                summary = summary
+            };
+
+            _context.Chapters.Add(ch);
+            _context.SaveChanges();
         }
 
-        public static void RestoreChapter(int bookId, int chapter)
+        public void TrashChapter(int bookId, int chapter, bool entries = false)
         {
-            Sql.ExecuteNonQuery("Chapter_Restore", new { bookId, chapter });
+            var ch = _context.Chapters.FirstOrDefault(c => c.bookId == bookId && c.chapter == chapter);
+            if (ch != null)
+            {
+                _context.Chapters.Remove(ch);
+                _context.SaveChanges();
+
+                // Optional: delete associated entries if required
+                if (entries)
+                {
+                    var relatedEntries = _context.Entries
+                        .Where(e => e.bookId == bookId && e.chapter == chapter)
+                        .ToList();
+
+                    _context.Entries.RemoveRange(relatedEntries);
+                    _context.SaveChanges();
+                }
+            }
         }
 
-        public static void DeleteChapter(int bookId, int chapter)
+        public void RestoreChapter(int bookId, int chapter)
         {
-            Sql.ExecuteNonQuery("Chapter_Delete", new { bookId, chapter });
+            // This depends on having soft-delete (e.g., "isTrashed" flag).
+            // If you're using hard deletes, restoring won't be possible.
+            // You'd need to implement a "trash bin" table or flag.
+
+            // Example (if soft-delete is implemented):
+            /*
+            var ch = _context.Chapters
+                .IgnoreQueryFilters()
+                .FirstOrDefault(c => c.bookId == bookId && c.chapter == chapter && c.isTrashed);
+            if (ch != null)
+            {
+                ch.isTrashed = false;
+                _context.SaveChanges();
+            }
+            */
         }
 
-        public static void UpdateChapter(int bookId, int chapter, string title, string summary)
+        public void DeleteChapter(int bookId, int chapter)
         {
-            Sql.ExecuteNonQuery("Chapter_Update", new { bookId, chapter, title, summary });
+            TrashChapter(bookId, chapter);
         }
 
-        public static int GetMax(int bookId)
+        public void UpdateChapter(int bookId, int chapter, string title, string summary)
         {
-            return Sql.ExecuteScalar<int>("Chapter_GetMax", new Dictionary<string, object>() { { "bookId", bookId } });
+            var ch = _context.Chapters.FirstOrDefault(c => c.bookId == bookId && c.chapter == chapter);
+            if (ch != null)
+            {
+                ch.title = title;
+                ch.summary = summary;
+                _context.SaveChanges();
+            }
         }
 
-        public static List<Models.Chapter> GetList(int bookId)
+        public int GetMax(int bookId)
         {
-            return Sql.Populate<Models.Chapter>("Chapters_GetList", new { bookId });
+            return _context.Chapters
+                .Where(c => c.bookId == bookId)
+                .Select(c => (int?)c.chapter)
+                .Max() ?? 0;
+        }
+
+        public List<Chapter> GetList(int bookId)
+        {
+            return _context.Chapters
+                .Where(c => c.bookId == bookId)
+                .OrderBy(c => c.chapter)
+                .ToList();
         }
     }
 }

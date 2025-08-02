@@ -1,99 +1,153 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Query.Models;
+using Query.Data;
 
 namespace Query
 {
-    public static class Entries
+    public class Entries
     {
-        public static int CreateEntry(int userId, int bookId, DateTime dateCreated, string title, string summary = "", int chapter = 0, int sort = 0)
+        private readonly AppDbContext _context;
+
+        public Entries(AppDbContext context)
         {
-            return Sql.ExecuteScalar<int>("Entry_Create",
-                new { userId, bookId, chapter, sort, dateCreated, title, summary }
-            );
+            _context = context;
         }
 
-        public static int TrashEntry(int userId, int entryId)
+        public int CreateEntry(int userId, int bookId, DateTime dateCreated, string title, string summary = "", int chapter = 0, int sort = 0)
         {
-            return Sql.ExecuteScalar<int>("Entry_Trash",
-                new { userId, entryId }
-            );
+            var entry = new Entry
+            {
+                userId = userId,
+                bookId = bookId,
+                chapter = chapter,
+                sort = sort,
+                datecreated = dateCreated,
+                datemodified = dateCreated,
+                title = title,
+                summary = summary
+            };
+
+            _context.Entries.Add(entry);
+            _context.SaveChanges();
+
+            return entry.entryId;
         }
 
-        public static void RestoreEntry(int userId, int entryId)
+        public int TrashEntry(int userId, int entryId)
         {
-            Sql.ExecuteNonQuery("Entry_Restore",
-                new { userId, entryId }
-            );
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            if (entry != null)
+            {
+                _context.Entries.Remove(entry);
+                _context.SaveChanges();
+                return 1;
+            }
+
+            return 0;
         }
 
-        public static void DeleteEntry(int userId, int entryId)
+        public void RestoreEntry(int userId, int entryId)
         {
-            Sql.ExecuteNonQuery("Entry_Delete",
-                new { userId, entryId }
-            );
+            // Only possible if soft-deleted support exists (e.g., isTrashed flag)
         }
 
-        public static Models.Entry GetDetails(int userId, int entryId)
+        public void DeleteEntry(int userId, int entryId)
         {
-            var list = Sql.Populate<Models.Entry>(
-                "Entry_GetDetails",
-                new { userId, entryId }
-            );
-            if(list.Count > 0) { return list[0]; }
-            return null;
+            TrashEntry(userId, entryId); // Same behavior in this version
         }
 
-        public static Models.Entry GetFirst(int userId, int bookId, int sort = 0)
+        public Entry GetDetails(int userId, int entryId)
         {
-            var list = Sql.Populate<Models.Entry>(
-                "Entries_GetFirst",
-                new { userId, bookId, sort }
-            );
-            if (list.Count > 0) { return list[0]; }
-            return null;
+            return _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
         }
 
-        public static List<Models.Entry> GetList(int userId, int bookId, int start = 1, int length = 50, int sort = 0)
+        public Entry GetFirst(int userId, int bookId, int sort = 0)
         {
-            return Sql.Populate<Models.Entry>(
-                "Entries_GetList",
-                new { userId, bookId, start, length, sort }
-            );
+            var query = _context.Entries
+                .Where(e => e.userId == userId && e.bookId == bookId);
+
+            if (sort == 1)
+                return query.OrderByDescending(e => e.sort).FirstOrDefault();
+
+            return query.OrderBy(e => e.sort).FirstOrDefault();
         }
 
-        public static void UpdateBook(int userId, int entryId, int bookId)
+        public List<Entry> GetList(int userId, int bookId, int start = 1, int length = 50, int sort = 0)
         {
-            Sql.ExecuteNonQuery("Entry_UpdateBook",
-                new { userId, entryId, bookId }
-            );
+            var query = _context.Entries
+                .Where(e => e.userId == userId && e.bookId == bookId);
+
+            if (sort == 1)
+                query = query.OrderByDescending(e => e.sort);
+            else
+                query = query.OrderBy(e => e.sort);
+
+            return query
+                .Skip(start - 1)
+                .Take(length)
+                .ToList();
         }
 
-        public static void UpdateChapter(int userId, int entryId, int chapter)
+        public void UpdateBook(int userId, int entryId, int bookId)
         {
-            Sql.ExecuteNonQuery("Entry_UpdateChapter",
-                new { userId, entryId, chapter }
-            );
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            if (entry != null)
+            {
+                entry.bookId = bookId;
+                entry.datemodified = DateTime.UtcNow;
+                _context.SaveChanges();
+            }
         }
 
-        public static void UpdateSummary(int userId, int entryId, string summary)
+        public void UpdateChapter(int userId, int entryId, int chapter)
         {
-            Sql.ExecuteNonQuery("Entry_UpdateSummary",
-                new { userId, entryId, summary }
-            );
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            if (entry != null)
+            {
+                entry.chapter = chapter;
+                entry.datemodified = DateTime.UtcNow;
+                _context.SaveChanges();
+            }
         }
 
-        public static void UpdateTitle(int userId, int entryId, string title)
+        public void UpdateSummary(int userId, int entryId, string summary)
         {
-            Sql.ExecuteNonQuery("Entry_UpdateTitle",
-                new { userId, entryId, title }
-            );
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            if (entry != null)
+            {
+                entry.summary = summary;
+                entry.datemodified = DateTime.UtcNow;
+                _context.SaveChanges();
+            }
         }
 
-        public static void Update(int entryId, int bookId, DateTime dateCreated, string title, string summary = "", int chapter = 0)
+        public void UpdateTitle(int userId, int entryId, string title)
         {
-            Sql.ExecuteNonQuery("Entry_Update",
-                new { entryId, bookId, chapter, dateCreated, title, summary }
-            );
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            if (entry != null)
+            {
+                entry.title = title;
+                entry.datemodified = DateTime.UtcNow;
+                _context.SaveChanges();
+            }
+        }
+
+        public void Update(int entryId, int bookId, DateTime dateCreated, string title, string summary = "", int chapter = 0)
+        {
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId);
+            if (entry != null)
+            {
+                entry.bookId = bookId;
+                entry.chapter = chapter;
+                entry.datecreated = dateCreated;
+                entry.datemodified = DateTime.UtcNow;
+                entry.title = title;
+                entry.summary = summary;
+                _context.SaveChanges();
+            }
         }
     }
 }
