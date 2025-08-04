@@ -38,4 +38,17 @@ public class Routes : Datasilk.Core.Web.Routes
         }
     }
 
+    public override IService FromServiceRoutes(HttpContext context, Parameters parameters, string name)
+    {
+        switch(name)
+        {
+            case "user": return context.RequestServices.GetService<Legendary.Services.UserService>();
+            case "chapters": return context.RequestServices.GetService<Legendary.Services.ChapterService>();
+            case "entries": return context.RequestServices.GetService<Legendary.Services.EntryService>();
+            case "trash": return context.RequestServices.GetService<Legendary.Services.TrashService>();
+                case "books": return context.RequestServices.GetService<Legendary.Services.BookService>();
+            default: return null;
+        }
+    }
+
 }

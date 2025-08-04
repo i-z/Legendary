@@ -17,8 +17,9 @@ namespace Legendary.ViewModels
             byTitle = 3
         }
 
-        private static readonly byte[] aesKey = Encoding.UTF8.GetBytes("Your32ByteLongEncryptionKey!!"); // 32 байта = AES-256
-        private static readonly byte[] aesIV = Encoding.UTF8.GetBytes("Your16ByteLongIV!");
+        private static readonly byte[] aesKey = Convert.FromBase64String("w7NbbXYW9uNQGZ3tZ8EEMqzPAlkTf7m8YZkA34vSQQY=");
+        private static readonly byte[] aesIV = Convert.FromBase64String("H+8K1I8bK1Q3g+jZ+zX8eA==");
+
 
         private readonly ChapterModel _chapterModle;
         private readonly EntryModel _entryModel;

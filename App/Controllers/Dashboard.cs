@@ -1,7 +1,8 @@
-﻿using System.Text;
+﻿using BCrypt.Net;
 using Datasilk.Core.Web;
 using Legendary.Data.Models;
 using Legendary.ViewModels;
+using System.Text;
 
 namespace Legendary.Controllers
 {
@@ -66,10 +67,10 @@ namespace Legendary.Controllers
                     bookId = books[0].bookId;
                     var first = _entryModel.GetFirst(User.userId, bookId, (int)EntryViewModel.SortType.byChapter);
                     var script = new StringBuilder("<script language=\"javascript\">S.entries.bookId=" + bookId + ";");
-                    entryId = first.entryId;
                     
                     if (first != null)
                     {
+                        entryId = first.entryId;
                         //load content of first entry
                         dash["editor-content"] = _entryViewModel.LoadEntry(first.entryId, bookId);
                         script.Append("S.editor.entryId=" + entryId.ToString() + ";$('.editor').removeClass('hide');");
@@ -88,6 +89,8 @@ namespace Legendary.Controllers
                 dash["no-books"] = "hide";
                 dash["no-entries"] = "hide";
                 dash["no-content"] = Server.LoadFileFromCache("/Views/Dashboard/templates/nobooks.html");
+
+                Scripts.Append("<script language=\"javascript\">S.dash.init();</script>");
             }
 
             //get count for tags & trash

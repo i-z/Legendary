@@ -62,7 +62,8 @@ namespace Legendary.Services
                 {
                     name = name,
                     email = email,
-                    password = EncryptPassword(email, password)
+                    password = EncryptPassword(email, password),
+                    active = true,
                 });
                 Server.hasAdmin = true;
                 Server.resetPass = false;
