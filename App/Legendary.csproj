@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <StartupObject>Legendary.Program</StartupObject>
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
-	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -25,7 +25,8 @@
     <PackageReference Include="Datasilk.Core.Mvc" Version="1.0.7" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
-	<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Query\Query.csproj" />
+    <ProjectReference Include="..\Query\Legendary.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

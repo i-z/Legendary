@@ -1,4 +1,5 @@
 ﻿using Datasilk.Core.Web;
+using Legendary.Data.Models;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 
@@ -6,6 +7,11 @@ namespace Legendary.Controllers
 {
     public class File : Controller
     {
+
+        public File(UserModel userModel) : base(userModel)
+        {
+            // Constructor logic if needed
+        }
         public override string Render(string body = "")
         {
             if (!CheckSecurity()) { return Error404(); }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Query.Models
+namespace Legendary.Data.Models
 {
     public class User
     {

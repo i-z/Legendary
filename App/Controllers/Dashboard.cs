@@ -1,11 +1,28 @@
 ﻿using System.Text;
 using Datasilk.Core.Web;
-using Legendary.Common.Platform;
+using Legendary.Data.Models;
+using Legendary.ViewModels;
 
 namespace Legendary.Controllers
 {
     public class Dashboard : Controller
     {
+        private readonly BookModel _bookModel;
+        private readonly EntryModel _entryModel;
+        private readonly EntryViewModel _entryViewModel;
+        private readonly TrashModel _trash;
+        private readonly UserModel _userModel;
+
+        public Dashboard(BookModel bookModel, EntryModel entryModel, EntryViewModel entryViewModel, TrashModel trash, UserModel userModel) : base(userModel)
+        {
+            _bookModel = bookModel;
+            _entryModel = entryModel;
+            _entryViewModel = entryViewModel;
+            _trash = trash;
+            _userModel = userModel;
+        }
+
+
         public override string Render(string body = "")
         {
             if (!CheckSecurity()) { return AccessDenied<Login>(); }
@@ -18,13 +35,13 @@ namespace Legendary.Controllers
 
             //get list of books
             var html = new StringBuilder();
-            var books = Query.Books.GetList(User.userId);
+            var books = _bookModel.GetList(User.userId);
             if(books.Count > 0)
             {
                 //books exist
                 var list = new View("/Views/Books/list-item.html");
                 var i = 0;
-                books.ForEach((Query.Models.Book book) =>
+                books.ForEach((Book book) =>
                 {
                     if (i == 0)
                     {
@@ -47,14 +64,14 @@ namespace Legendary.Controllers
                 if (books.Count > 0)
                 {
                     bookId = books[0].bookId;
-                    var first = Query.Entries.GetFirst(User.userId, bookId, (int)Entries.SortType.byChapter);
+                    var first = _entryModel.GetFirst(User.userId, bookId, (int)EntryViewModel.SortType.byChapter);
                     var script = new StringBuilder("<script language=\"javascript\">S.entries.bookId=" + bookId + ";");
                     entryId = first.entryId;
                     
                     if (first != null)
                     {
                         //load content of first entry
-                        dash["editor-content"] = Entries.LoadEntry(first.entryId, bookId);
+                        dash["editor-content"] = _entryViewModel.LoadEntry(first.entryId, bookId);
                         script.Append("S.editor.entryId=" + entryId.ToString() + ";$('.editor').removeClass('hide');");
                     }
                     else
@@ -64,7 +81,7 @@ namespace Legendary.Controllers
                     }
                     Scripts.Append(script.ToString() + "S.dash.init();</script>");
                 }
-                dash["entries"] = Entries.GetList(User.userId, bookId, entryId, 1, 500, Entries.SortType.byChapter);
+                dash["entries"] = _entryViewModel.GetList(User.userId, bookId, entryId, 1, 500, EntryViewModel.SortType.byChapter);
             }
             else
             {
@@ -76,7 +93,7 @@ namespace Legendary.Controllers
             //get count for tags & trash
 
             dash["tags-count"] = "0";
-            dash["trash-count"] = Trash.GetCount(User.userId).ToString();
+            dash["trash-count"] = _trash.GetCount(User.userId).ToString();
 
             //load script templates (for popups)
             dash["templates"] = 

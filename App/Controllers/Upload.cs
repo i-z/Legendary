@@ -3,11 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
+using Legendary.Data.Models;
 
 namespace Legendary.Controllers
 {
     public class Upload : Controller
     {
+        public Upload(UserModel userModel) : base(userModel)
+        {
+            // Constructor logic if needed
+        }
+
         public override string Render(string body = "")
         {
             if(CheckSecurity() == false) { return Error404(); }

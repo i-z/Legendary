@@ -1,12 +1,18 @@
+using Datasilk.Core.Extensions;
+using Legendary.Controllers;
+using Legendary.Data.Context;
+using Legendary.Data.Models;
+using Legendary.Services;
+using Legendary.ViewModels;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-using Datasilk.Core.Extensions;
 
 namespace Legendary
 {
@@ -16,6 +22,11 @@ namespace Legendary
 
         public virtual void ConfigureServices(IServiceCollection services)
         {
+
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlite("Data Source=app.db"));
+
+
             //set up Server-side memory cache
             services.AddDistributedMemoryCache();
             services.AddMemoryCache();
@@ -33,12 +44,34 @@ namespace Legendary
 
             //add health checks
             services.AddHealthChecks();
+
+            services.AddScoped<BookModel>();
+            services.AddScoped<ChapterModel>();
+            services.AddScoped<EntryModel>();
+            services.AddScoped<TrashModel>();
+            services.AddScoped<UserModel>();
+
+            services.AddScoped<EntryViewModel>();
+
+            services.AddScoped<BookService>();
+            services.AddScoped<ChapterService>();
+            services.AddScoped<EntryService>();
+            services.AddScoped<TrashService>();
+            services.AddScoped<UserService>();
+
+            services.AddScoped<Dashboard>();
+            services.AddScoped<AccessDenied>();
+            services.AddScoped<Controllers.File>();
+            services.AddScoped<Home>();
+            services.AddScoped<Login>();
+            services.AddScoped<Logout>();
+            services.AddScoped<Upload>();
+
         }
 
         public virtual void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             Server.IsDocker = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
-
 
             //get environment based on application build
             switch (env.EnvironmentName.ToLower())
@@ -77,8 +110,6 @@ namespace Legendary
                 Server.Version = config.GetSection("version").Value;
             }
 
-            //configure Server database connection strings
-            Query.Sql.ConnectionString = config.GetSection("sql:" + config.GetSection("sql:Active").Value).Value;
 
             //configure Server security
             Server.bcrypt_workfactor = int.Parse(config.GetSection("Encryption:bcrypt_work_factor").Value);
@@ -126,7 +157,7 @@ namespace Legendary
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             //set up database
-            Server.hasAdmin = Query.Users.HasAdmin();
+            Server.hasAdmin = true;
 
             //run Datasilk Core MVC Middleware
             app.UseDatasilkMvc(new MvcOptions()
@@ -136,6 +167,12 @@ namespace Legendary
                 IgnoreRequestBodySize = true,
                 Routes = new Routes()
             });
+            
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                db.Database.EnsureCreated(); // или db.Database.Migrate()
+            }
 
             Console.WriteLine("Running Legendary Server in " + Server.environment.ToString() + " environment");
         }

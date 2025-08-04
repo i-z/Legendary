@@ -1,11 +1,17 @@
 using System.Collections.Generic;
 using System.Text;
 using Datasilk.Core.Web;
+using Legendary.Data.Models;
 
 namespace Legendary
 {
     public class Service : Request, IService
     {
+
+        public Service(UserModel userModel) : base(userModel)
+        {
+        }
+
         protected StringBuilder Scripts = new StringBuilder();
         protected StringBuilder Css = new StringBuilder();
         protected List<string> Resources = new List<string>();

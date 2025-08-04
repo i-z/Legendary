@@ -1,8 +1,17 @@
-﻿namespace Legendary.Controllers
+﻿using Legendary.Data.Models;
+
+namespace Legendary.Controllers
 
 {
     public class Login: Controller
     {
+
+        public Login(UserModel userModel) : base(userModel)
+        {
+            // Constructor logic if needed
+        }
+
+
         public override string Render(string body = "")
         {
             if(User.userId > 0)

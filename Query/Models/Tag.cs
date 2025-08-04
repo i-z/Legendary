@@ -1,4 +1,4 @@
-﻿namespace Query.Models
+﻿namespace Legendary.Data.Models
 {
     public class Tag
     {

@@ -1,15 +1,24 @@
-﻿namespace Legendary
+﻿using Legendary.Data.Models;
+
+namespace Legendary
 {
     public class Request : Datasilk.Core.Web.Request
     {
-        protected User user;
-        public User User
+        private readonly UserModel _userModel;
+
+        public Request(UserModel userModel) : base()
+        {
+            _userModel = userModel;
+        }
+
+        protected WebUser user;
+        public WebUser User
         {
             get
             {
                 if (user == null)
                 {
-                    user = User.Get(Context);
+                    user = WebUser.Get(Context, _userModel);
                 }
                 return user;
             }

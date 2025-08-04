@@ -2,11 +2,16 @@
 using System.Text;
 using Datasilk.Core.Web;
 using System.Text.Json;
+using Legendary.Data.Models;
 
 namespace Legendary
 {
     public class Controller : Request, IController
     {
+        public Controller(UserModel userModel) : base(userModel)
+        {
+        }
+
         public StringBuilder Scripts { get; set; } = new StringBuilder();
         public StringBuilder Css { get; set; } = new StringBuilder();
         private List<string> Resources = new List<string>();
