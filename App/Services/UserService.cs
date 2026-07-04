@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Security.Cryptography;
 using Legendary.Data.Models;
 
 namespace Legendary.Services
@@ -26,6 +27,7 @@ namespace Legendary.Services
                 if (user != null)
                 {
                     User.LogIn(_users, user.userId, user.email, user.name, user.datecreated, "", user.usertype, user.photo);
+                    User.SetContentKey(GenerateContentKey(user.email, password));
                     User.Save(true);
                     return Success();
                 }
@@ -191,6 +193,13 @@ namespace Legendary.Services
             {
                 return false;
             }
+        }
+
+        private string GenerateContentKey(string email, string password)
+        {
+            var bytes = Encoding.UTF8.GetBytes(email + "|" + Server.salt + "|" + password);
+            var hash = SHA256.HashData(bytes);
+            return Convert.ToBase64String(hash);
         }
     }
 }

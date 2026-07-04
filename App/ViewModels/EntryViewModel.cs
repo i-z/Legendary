@@ -17,8 +17,10 @@ namespace Legendary.ViewModels
             byTitle = 3
         }
 
-        private static readonly byte[] aesKey = Convert.FromBase64String("w7NbbXYW9uNQGZ3tZ8EEMqzPAlkTf7m8YZkA34vSQQY=");
-        private static readonly byte[] aesIV = Convert.FromBase64String("H+8K1I8bK1Q3g+jZ+zX8eA==");
+        private static readonly byte[] legacyAesKey = Convert.FromBase64String("w7NbbXYW9uNQGZ3tZ8EEMqzPAlkTf7m8YZkA34vSQQY=");
+        private static readonly byte[] legacyAesIV = Convert.FromBase64String("H+8K1I8bK1Q3g+jZ+zX8eA==");
+        private static readonly byte[] encryptedMagic = Encoding.ASCII.GetBytes("LGE1");
+        private const int KdfIterations = 120000;
 
 
         private readonly ChapterModel _chapterModle;
@@ -104,9 +106,13 @@ namespace Legendary.ViewModels
             }
         }
 
-        public void SaveEntry(int userId, int entryId, string content)
+        public void SaveEntry(int userId, int entryId, string content, string contentKey)
         {
             if (userId == 0) return;
+            if (string.IsNullOrWhiteSpace(contentKey))
+            {
+                throw new ServiceErrorException("Secure session expired. Please log out and sign in with password.");
+            }
 
             var entry = _entryModel.GetDetails(userId, entryId);
             var path = "/Content/books/" + entry.bookId + "/";
@@ -117,23 +123,11 @@ namespace Legendary.ViewModels
                 Directory.CreateDirectory(fullPath);
             }
 
-            var data = Encoding.UTF8.GetBytes(content);
-
-            using var aes = Aes.Create();
-            aes.Key = aesKey;
-            aes.IV = aesIV;
-
-            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-            using var ms = new MemoryStream();
-            using (var cryptoStream = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-            {
-                cryptoStream.Write(data, 0, data.Length);
-            }
-
-            File.WriteAllBytes(Path.Combine(fullPath, entryId + ".dat"), ms.ToArray());
+            var encrypted = EncryptContent(Encoding.UTF8.GetBytes(content ?? ""), contentKey);
+            File.WriteAllBytes(Path.Combine(fullPath, entryId + ".dat"), encrypted);
         }
 
-        public string LoadEntry(int entryId, int bookId)
+        public string LoadEntry(int entryId, int bookId, string contentKey)
         {
             var path = "/Content/books/" + bookId + "/";
             var file = Server.MapPath(path + entryId + ".dat");
@@ -144,17 +138,15 @@ namespace Legendary.ViewModels
             try
             {
                 var encryptedData = File.ReadAllBytes(file);
-
-                using var aes = Aes.Create();
-                aes.Key = aesKey;
-                aes.IV = aesIV;
-
-                using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-                using var ms = new MemoryStream(encryptedData);
-                using var cryptoStream = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-                using var sr = new StreamReader(cryptoStream, Encoding.UTF8);
-
-                return sr.ReadToEnd();
+                if (IsEncryptedV1(encryptedData) && string.IsNullOrWhiteSpace(contentKey))
+                {
+                    throw new ServiceErrorException("Secure session expired. Please log out and sign in with password.");
+                }
+                if (TryDecryptContent(encryptedData, contentKey, out var content))
+                {
+                    return content;
+                }
+                throw new ServiceErrorException("Could not decrypt entry content");
             }
             catch (IOException)
             {
@@ -228,6 +220,82 @@ namespace Legendary.ViewModels
             byte[] bytes = new byte[str.Length * sizeof(char)];
             Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
             return bytes;
+        }
+
+        private static byte[] EncryptContent(byte[] plaintext, string contentKey)
+        {
+            var salt = RandomNumberGenerator.GetBytes(16);
+            var nonce = RandomNumberGenerator.GetBytes(12);
+            var key = DeriveKey(contentKey, salt);
+            var ciphertext = new byte[plaintext.Length];
+            var tag = new byte[16];
+            using var aes = new AesGcm(key, 16);
+            aes.Encrypt(nonce, plaintext, ciphertext, tag);
+
+            var result = new byte[encryptedMagic.Length + salt.Length + nonce.Length + tag.Length + ciphertext.Length];
+            Buffer.BlockCopy(encryptedMagic, 0, result, 0, encryptedMagic.Length);
+            Buffer.BlockCopy(salt, 0, result, encryptedMagic.Length, salt.Length);
+            Buffer.BlockCopy(nonce, 0, result, encryptedMagic.Length + salt.Length, nonce.Length);
+            Buffer.BlockCopy(tag, 0, result, encryptedMagic.Length + salt.Length + nonce.Length, tag.Length);
+            Buffer.BlockCopy(ciphertext, 0, result, encryptedMagic.Length + salt.Length + nonce.Length + tag.Length, ciphertext.Length);
+            return result;
+        }
+
+        private static bool TryDecryptContent(byte[] data, string contentKey, out string content)
+        {
+            content = "";
+            if (data == null || data.Length == 0) { return true; }
+
+            if (IsEncryptedV1(data))
+            {
+                if (string.IsNullOrWhiteSpace(contentKey))
+                {
+                    return false;
+                }
+
+                var offset = encryptedMagic.Length;
+                var salt = data.Skip(offset).Take(16).ToArray();
+                offset += 16;
+                var nonce = data.Skip(offset).Take(12).ToArray();
+                offset += 12;
+                var tag = data.Skip(offset).Take(16).ToArray();
+                offset += 16;
+                var ciphertext = data.Skip(offset).ToArray();
+
+                var plaintext = new byte[ciphertext.Length];
+                var key = DeriveKey(contentKey, salt);
+                using var aes = new AesGcm(key, 16);
+                aes.Decrypt(nonce, ciphertext, tag, plaintext);
+                content = Encoding.UTF8.GetString(plaintext);
+                return true;
+            }
+
+            // legacy fallback
+            using var legacyAes = Aes.Create();
+            legacyAes.Key = legacyAesKey;
+            legacyAes.IV = legacyAesIV;
+            using var decryptor = legacyAes.CreateDecryptor(legacyAes.Key, legacyAes.IV);
+            using var ms = new MemoryStream(data);
+            using var cryptoStream = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            using var sr = new StreamReader(cryptoStream, Encoding.UTF8);
+            content = sr.ReadToEnd();
+            return true;
+        }
+
+        private static bool IsEncryptedV1(byte[] data)
+        {
+            if (data.Length < encryptedMagic.Length + 16 + 12 + 16) { return false; }
+            for (var i = 0; i < encryptedMagic.Length; i++)
+            {
+                if (data[i] != encryptedMagic[i]) { return false; }
+            }
+            return true;
+        }
+
+        private static byte[] DeriveKey(string contentKey, byte[] salt)
+        {
+            using var kdf = new Rfc2898DeriveBytes(contentKey, salt, KdfIterations, HashAlgorithmName.SHA256);
+            return kdf.GetBytes(32);
         }
     }
 }

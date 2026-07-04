@@ -15,6 +15,7 @@ namespace Legendary
         public string displayName { get; set; } = "";
         public bool photo { get; set; } = false;
         public bool resetPass { get; set; } = false;
+        public string contentKey { get; set; } = "";
         public DateTime datecreated { get; set; }
         public string language { get; set; } = "en";
         protected bool changed = false;
@@ -86,6 +87,7 @@ namespace Legendary
             this.name = name;
             this.displayName = displayName;
             this.datecreated = datecreated;
+            this.contentKey = "";
 
             //create persistant cookie
             var auth = userModel.CreateAuthToken(userId);
@@ -99,12 +101,19 @@ namespace Legendary
             changed = true;
         }
 
+        public void SetContentKey(string contentKey)
+        {
+            this.contentKey = contentKey ?? "";
+            changed = true;
+        }
+
         public void LogOut()
         {
             userId = 0;
             email = "";
             name = "";
             photo = false;
+            contentKey = "";
             changed = true;
             Context.Response.Cookies.Delete("authId");
         }

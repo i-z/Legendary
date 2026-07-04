@@ -71,8 +71,15 @@ namespace Legendary.Controllers
                     if (first != null)
                     {
                         entryId = first.entryId;
-                        //load content of first entry
-                        dash["editor-content"] = _entryViewModel.LoadEntry(first.entryId, bookId);
+                        try
+                        {
+                            //load content of first entry
+                            dash["editor-content"] = _entryViewModel.LoadEntry(first.entryId, bookId, User.contentKey);
+                        }
+                        catch
+                        {
+                            dash["editor-content"] = "";
+                        }
                         script.Append("S.editor.entryId=" + entryId.ToString() + ";$('.editor').removeClass('hide');");
                     }
                     else

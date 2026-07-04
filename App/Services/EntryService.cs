@@ -44,11 +44,11 @@ namespace Legendary.Services
             if (!CheckSecurity()) { return AccessDenied(); }
             try
             {
-                _entryViewModel.SaveEntry(User.userId, entryId, content);
+                _entryViewModel.SaveEntry(User.userId, entryId, content, User.contentKey);
             }
-            catch (ServiceErrorException)
+            catch (ServiceErrorException ex)
             {
-                return Error("An error occurred while saving your entry");
+                return Error(ex.Message);
             }
             return Success();
         }
@@ -58,7 +58,7 @@ namespace Legendary.Services
             if (!CheckSecurity()) { return AccessDenied(); }
             try
             {
-                return _entryViewModel.LoadEntry(entryId, bookId);
+                return _entryViewModel.LoadEntry(entryId, bookId, User.contentKey);
             }
             catch (ServiceErrorException ex)
             {
