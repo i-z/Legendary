@@ -97,12 +97,16 @@ namespace Legendary.Controllers
 
             dash["tags-count"] = "0";
             dash["trash-count"] = _trash.GetCount(User.userId).ToString();
+            dash["admin-tools"] = User.userType == 1
+                ? "<li class=\"root item-newuser row hover\"><a href=\"javascript:\" class=\"btn-newuser\"><span class=\"col icon small pad-width\"><svg viewBox=\"0 0 32 32\"><use xlink:href=\"#icon-add\" x=\"0\" y=\"0\" width=\"32\" height=\"32\"></use></svg></span><span>Add User</span></a></li><li class=\"root item-users row hover\"><a href=\"javascript:\" class=\"btn-users\"><span class=\"col icon small pad-width\"><svg viewBox=\"0 0 32 32\"><use xlink:href=\"#icon-user\" x=\"0\" y=\"0\" width=\"32\" height=\"32\"></use></svg></span><span>Users</span></a></li>"
+                : "";
 
             //load script templates (for popups)
             dash["templates"] = 
                 Server.LoadFileFromCache("/Views/Dashboard/templates/newbook.html") + 
                 Server.LoadFileFromCache("/Views/Dashboard/templates/newentry.html") +
                 Server.LoadFileFromCache("/Views/Dashboard/templates/newchapter.html") +
+                Server.LoadFileFromCache("/Views/Dashboard/templates/newuser.html") +
                 Server.LoadFileFromCache("/Views/Dashboard/templates/noentries.html");
             
             return base.Render(dash.Render());

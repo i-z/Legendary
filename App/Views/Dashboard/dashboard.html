@@ -4,13 +4,6 @@
             <use xlink:href="#logo" x="0" y="0" width="500" height="70"></use>
         </svg>
     </div>
-    <div class="top-menu">
-        <ul>
-            <li>Books</li>
-            <li>Chapters</li>
-            <li>Page</li>
-        </ul>
-    </div>
     <a class="logo-d" href="https://www.datasilk.io" target="_blank"><img src="/images/logo-D-xs.png" title="Datasilk" /></a>
 </header>
 <div class="upload-progress"></div>
@@ -54,11 +47,12 @@
                 <span>Trash <span class="count faded pad-left-sm">({{trash-count}})</span></span>
             </a>
         </li>
+        {{admin-tools}}
 
         <li style="height:100px"></li>
 
         <li class="root item-logout row hover">
-            <a href="javascript:">
+            <a href="/logout">
                 <span class="col icon small pad-width">
                     <svg viewBox="0 0 32 32">
                         <use xlink:href="#icon-logout" x="0" y="0" width="32" height="32"></use>

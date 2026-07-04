@@ -1,0 +1,31 @@
+<script type="text/html" id="template_newuser">
+    <div class="row message hide"><span></span></div>
+    <form method="post">
+        <div class="row field">Name</div>
+        <div class="row input hover">
+            <input type="text" id="txtuser_name" placeholder="Jane Doe" />
+        </div>
+        <div class="row field">Email</div>
+        <div class="row input hover">
+            <input type="email" id="txtuser_email" placeholder="jane@example.com" />
+        </div>
+        <div class="row field">Password</div>
+        <div class="row input hover">
+            <input type="password" id="txtuser_password" />
+        </div>
+        <div class="row field">Confirm Password</div>
+        <div class="row input hover">
+            <input type="password" id="txtuser_password2" />
+        </div>
+        <div class="row field">Role</div>
+        <div class="row input hover">
+            <select id="lstuser_type">
+                <option value="0">User</option>
+                <option value="1">Administrator</option>
+            </select>
+        </div>
+        <div class="row pad-top text-center">
+            <input type="submit" class="button apply" value="Create User" />
+        </div>
+    </form>
+</script>

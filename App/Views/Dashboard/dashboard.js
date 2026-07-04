@@ -3,10 +3,9 @@ S.dash = {
     init: function () {
         //buttons
         $('.btn-newbook').on('click', S.books.create.view);
+        $('.btn-newuser').on('click', S.users.create.view);
+        $('.btn-users').on('click', S.users.manage.view);
         $('.item-trash > a').on('click', S.trash.view);
-        $('.top-menu li:nth-child(1)').on('click', S.menus.books.show);
-        $('.top-menu li:nth-child(2)').on('click', S.menus.chapters.show);
-        $('.top-menu li:nth-child(3)').on('click', S.menus.page.show);
 
         //events
         $(window).on('resize', S.entries.resize);
@@ -57,6 +56,104 @@ S.books = {
 
             return false;
         }
+    }
+};
+
+/* Users */
+S.users = {
+    create: {
+        view: function () {
+            var view = new S.view($('#template_newuser').html());
+            S.popup.show('Create a new User', view.render(), { width: 420 });
+            $('.popup form').on('submit', S.users.create.submit);
+        },
+
+        submit: function (e) {
+            e.preventDefault();
+            e.cancelBubble = true;
+
+            var data = {
+                name: $('#txtuser_name').val(),
+                email: $('#txtuser_email').val(),
+                password: $('#txtuser_password').val(),
+                isAdmin: $('#lstuser_type').val() == '1'
+            };
+            var password2 = $('#txtuser_password2').val();
+
+            if (data.name == '') {
+                S.message.show('.popup .message', 'error', 'Please provide a name');
+                return false;
+            }
+            if (!S.users.validateEmail(data.email)) {
+                S.message.show('.popup .message', 'error', 'Please provide a valid email address');
+                return false;
+            }
+            if (data.password.length < 8) {
+                S.message.show('.popup .message', 'error', 'Password must be at least 8 characters long');
+                return false;
+            }
+            if (data.password != password2) {
+                S.message.show('.popup .message', 'error', 'Passwords do not match');
+                return false;
+            }
+
+            S.ajax.post('User/CreateUser', data,
+                function () {
+                    S.popup.hide();
+                },
+                function (err) {
+                    S.message.show('.popup .message', 'error', err);
+                }
+            );
+
+            return false;
+        }
+    },
+
+    manage: {
+        view: function () {
+            S.ajax.post('User/GetUsers', {},
+                function (d) {
+                    S.popup.show('Manage Users', d, { width: 560 });
+                    $('.popup .btn-delete-user').on('click', S.users.manage.delete);
+                },
+                function (err) {
+                    S.message.show('.popup .message', 'error', err);
+                }
+            );
+        },
+
+        delete: function (e) {
+            e.preventDefault();
+            e.cancelBubble = true;
+
+            var btn = $(e.currentTarget);
+            var userId = parseInt(btn.attr('data-userid'));
+            var name = btn.attr('data-name') || 'this user';
+            if (!userId || userId <= 0) {
+                S.message.show('.popup .message', 'error', 'Invalid user');
+                return false;
+            }
+
+            if (!confirm('Delete ' + name + ' and all their data?\nThis action cannot be undone.')) {
+                return false;
+            }
+
+            S.ajax.post('User/DeleteUser', { userId: userId },
+                function () {
+                    S.users.manage.view();
+                },
+                function (err) {
+                    S.message.show('.popup .message', 'error', err);
+                }
+            );
+
+            return false;
+        }
+    },
+
+    validateEmail: function (email) {
+        return /^([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22))*\x40([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d))*$/.test(email);
     }
 };
 

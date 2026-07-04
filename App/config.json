@@ -8,7 +8,7 @@
     "SqlServerTrusted": "server=.\\SQL2017; database=Legendary; Trusted_Connection=true"
   },
   "encryption": {
-    "salt": "?",
+    "salt": "K9v3mX2pQ7rT8nL4cW1zH6yB5uD0fJ",
     "bcrypt_work_factor": "10"
   }
 }

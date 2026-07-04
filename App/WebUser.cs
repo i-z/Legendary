@@ -59,7 +59,7 @@ namespace Legendary
                 if (user != null)
                 {
                     //persistant cookie was valid, log in
-                    LogIn(userModel, user.userId, user.email, user.name, user.datecreated, "", 1, user.photo);
+                    LogIn(userModel, user.userId, user.email, user.name, user.datecreated, "", user.usertype, user.photo);
                 }
             }
         }

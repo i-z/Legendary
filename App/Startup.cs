@@ -157,7 +157,6 @@ namespace Legendary
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             //set up database
-            Server.hasAdmin = true;
 
             //run Datasilk Core MVC Middleware
             app.UseDatasilkMvc(new MvcOptions()
@@ -171,7 +170,35 @@ namespace Legendary
             using (var scope = app.ApplicationServices.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                db.Database.EnsureCreated(); // или db.Database.Migrate()
+                db.Database.EnsureCreated(); // пїЅпїЅпїЅ db.Database.Migrate()
+
+                var users = scope.ServiceProvider.GetRequiredService<UserModel>();
+                Server.hasAdmin = users.HasAdmin();
+
+                if (!Server.hasAdmin)
+                {
+                    var bootstrapName = config.GetSection("BootstrapAdmin:Name").Value;
+                    var bootstrapEmail = config.GetSection("BootstrapAdmin:Email").Value;
+                    var bootstrapPassword = config.GetSection("BootstrapAdmin:Password").Value;
+
+                    if (!string.IsNullOrWhiteSpace(bootstrapName)
+                        && !string.IsNullOrWhiteSpace(bootstrapEmail)
+                        && !string.IsNullOrWhiteSpace(bootstrapPassword))
+                    {
+                        users.CreateUser(new User()
+                        {
+                            usertype = 1,
+                            name = bootstrapName,
+                            email = bootstrapEmail,
+                            password = BCrypt.Net.BCrypt.HashPassword(
+                                bootstrapEmail + Server.salt + bootstrapPassword,
+                                Server.bcrypt_workfactor
+                            ),
+                            active = true
+                        });
+                        Server.hasAdmin = true;
+                    }
+                }
             }
 
             Console.WriteLine("Running Legendary Server in " + Server.environment.ToString() + " environment");

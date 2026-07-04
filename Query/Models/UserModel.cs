@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Legendary.Data.Context;
 using Microsoft.EntityFrameworkCore;
@@ -77,6 +78,31 @@ namespace Legendary.Data.Models
                 .FirstOrDefault();
         }
 
+        public User GetById(int userId)
+        {
+            return _context.Users.FirstOrDefault(u => u.userId == userId);
+        }
+
+        public List<User> GetUsers(int? excludeUserId = null)
+        {
+            var query = _context.Users.AsQueryable();
+            if (excludeUserId.HasValue)
+            {
+                query = query.Where(u => u.userId != excludeUserId.Value);
+            }
+
+            return query
+                .OrderByDescending(u => u.usertype)
+                .ThenBy(u => u.name)
+                .ThenBy(u => u.email)
+                .ToList();
+        }
+
+        public bool EmailExists(string email)
+        {
+            return _context.Users.Any(u => u.email == email);
+        }
+
         public void UpdateEmail(int userId, string email)
         {
             var user = _context.Users.Find(userId);
@@ -94,8 +120,36 @@ namespace Legendary.Data.Models
 
         public bool HasAdmin()
         {
-            // Assuming usertype admin is some specific value, e.g., 1
             return _context.Users.Any(u => u.usertype == 1);
+        }
+
+        public int GetAdminCount()
+        {
+            return _context.Users.Count(u => u.usertype == 1);
+        }
+
+        public List<int> DeleteUserAndData(int userId)
+        {
+            var entryIds = _context.Entries
+                .Where(e => e.userId == userId)
+                .Select(e => e.entryId)
+                .ToList();
+
+            var authTokens = _context.AuthTokens.Where(t => t.UserId == userId);
+            var entries = _context.Entries.Where(e => e.userId == userId);
+            var books = _context.Books.Where(b => b.userId == userId);
+            var user = _context.Users.FirstOrDefault(u => u.userId == userId);
+
+            _context.AuthTokens.RemoveRange(authTokens);
+            _context.Entries.RemoveRange(entries);
+            _context.Books.RemoveRange(books);
+            if (user != null)
+            {
+                _context.Users.Remove(user);
+            }
+
+            _context.SaveChanges();
+            return entryIds;
         }
     }
 }
