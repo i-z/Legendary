@@ -28,8 +28,13 @@ namespace Legendary.Data.Models
                 .Where(b => b.userId == userId && b.isTrashed)
                 .ToList();
 
+            var userBookIds = _context.Books
+                .Where(b => b.userId == userId)
+                .Select(b => b.bookId)
+                .ToList();
+
             var chapters = _context.Chapters
-                .Where(c => /*c.userId == userId &&*/ c.isTrashed)
+                .Where(c => c.isTrashed && userBookIds.Contains(c.bookId))
                 .ToList();
 
             var entries = _context.Entries
@@ -42,7 +47,8 @@ namespace Legendary.Data.Models
         public void Empty(int userId)
         {
             var books = _context.Books.Where(b => b.userId == userId && b.isTrashed);
-            var chapters = _context.Chapters.Where(c => /*c.userId == userId && */ c.isTrashed);
+            var userBookIds = _context.Books.Where(b => b.userId == userId).Select(b => b.bookId).ToList();
+            var chapters = _context.Chapters.Where(c => c.isTrashed && userBookIds.Contains(c.bookId));
             var entries = _context.Entries.Where(e => e.userId == userId && e.isTrashed);
 
             _context.Books.RemoveRange(books);
@@ -55,7 +61,8 @@ namespace Legendary.Data.Models
         public void RestoreAll(int userId)
         {
             var books = _context.Books.Where(b => b.userId == userId && b.isTrashed);
-            var chapters = _context.Chapters.Where(c => /*c.userId == userId && */ c.isTrashed);
+            var userBookIds = _context.Books.Where(b => b.userId == userId).Select(b => b.bookId).ToList();
+            var chapters = _context.Chapters.Where(c => c.isTrashed && userBookIds.Contains(c.bookId));
             var entries = _context.Entries.Where(e => e.userId == userId && e.isTrashed);
 
             foreach (var b in books) b.isTrashed = false;
@@ -75,8 +82,10 @@ namespace Legendary.Data.Models
 
             if (chapterIds != null && chapterIds.Count > 0)
             {
+                var userBookIds = _context.Books.Where(b => b.userId == userId).Select(b => b.bookId).ToList();
                 foreach (var chapter in chapterIds)
                 {
+                    if (!userBookIds.Contains(chapter.bookId)) { continue; }
                     var ch = _context.Chapters.FirstOrDefault(c => c.bookId == chapter.bookId && c.chapter == chapter.chapter && c.isTrashed);
                     if (ch != null)
                     {
@@ -107,8 +116,10 @@ namespace Legendary.Data.Models
 
             if (chapterIds != null && chapterIds.Count > 0)
             {
+                var userBookIds = _context.Books.Where(b => b.userId == userId).Select(b => b.bookId).ToList();
                 foreach (var chapter in chapterIds)
                 {
+                    if (!userBookIds.Contains(chapter.bookId)) { continue; }
                     var ch = _context.Chapters.FirstOrDefault(c => c.bookId == chapter.bookId && c.chapter == chapter.chapter && c.isTrashed);
                     if (ch != null)
                     {

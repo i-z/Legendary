@@ -23,7 +23,7 @@ namespace Legendary.Services
             if (!CheckSecurity()) { return AccessDenied(); }
 
             var view = new View("/Views/Trash/trash.html");
-            var scaffHeader = new View("/Views/Trash/section-header");
+            var scaffHeader = new View("/Views/Trash/section-header.html");
             var scaffBook = new View("/Views/Trash/item-book.html");
             var scaffChapter = new View("/Views/Trash/item-chapter.html");
             var scaffEntry = new View("/Views/Trash/item-entry.html");

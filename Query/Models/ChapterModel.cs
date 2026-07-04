@@ -29,42 +29,37 @@ namespace Legendary.Data.Models
 
         public void TrashChapter(int bookId, int chapter, bool entries = false)
         {
-            var ch = _context.Chapters.FirstOrDefault(c => c.bookId == bookId && c.chapter == chapter);
+            var ch = _context.Chapters.FirstOrDefault(c => c.bookId == bookId && c.chapter == chapter && !c.isTrashed);
             if (ch != null)
             {
-                _context.Chapters.Remove(ch);
-                _context.SaveChanges();
+                ch.isTrashed = true;
 
                 // Optional: delete associated entries if required
                 if (entries)
                 {
                     var relatedEntries = _context.Entries
-                        .Where(e => e.bookId == bookId && e.chapter == chapter)
+                        .Where(e => e.bookId == bookId && e.chapter == chapter && !e.isTrashed)
                         .ToList();
 
-                    _context.Entries.RemoveRange(relatedEntries);
-                    _context.SaveChanges();
+                    foreach (var entry in relatedEntries)
+                    {
+                        entry.isTrashed = true;
+                    }
                 }
+
+                _context.SaveChanges();
             }
         }
 
         public void RestoreChapter(int bookId, int chapter)
         {
-            // This depends on having soft-delete (e.g., "isTrashed" flag).
-            // If you're using hard deletes, restoring won't be possible.
-            // You'd need to implement a "trash bin" table or flag.
-
-            // Example (if soft-delete is implemented):
-            /*
             var ch = _context.Chapters
-                .IgnoreQueryFilters()
                 .FirstOrDefault(c => c.bookId == bookId && c.chapter == chapter && c.isTrashed);
             if (ch != null)
             {
                 ch.isTrashed = false;
                 _context.SaveChanges();
             }
-            */
         }
 
         public void DeleteChapter(int bookId, int chapter)
@@ -74,7 +69,7 @@ namespace Legendary.Data.Models
 
         public void UpdateChapter(int bookId, int chapter, string title, string summary)
         {
-            var ch = _context.Chapters.FirstOrDefault(c => c.bookId == bookId && c.chapter == chapter);
+            var ch = _context.Chapters.FirstOrDefault(c => c.bookId == bookId && c.chapter == chapter && !c.isTrashed);
             if (ch != null)
             {
                 ch.title = title;
@@ -86,7 +81,7 @@ namespace Legendary.Data.Models
         public int GetMax(int bookId)
         {
             return _context.Chapters
-                .Where(c => c.bookId == bookId)
+                .Where(c => c.bookId == bookId && !c.isTrashed)
                 .Select(c => (int?)c.chapter)
                 .Max() ?? 0;
         }
@@ -94,7 +89,7 @@ namespace Legendary.Data.Models
         public List<Chapter> GetList(int bookId)
         {
             return _context.Chapters
-                .Where(c => c.bookId == bookId)
+                .Where(c => c.bookId == bookId && !c.isTrashed)
                 .OrderBy(c => c.chapter)
                 .ToList();
         }
