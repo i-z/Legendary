@@ -93,9 +93,7 @@ namespace Legendary.Controllers
                 Scripts.Append("<script language=\"javascript\">S.dash.init();</script>");
             }
 
-            //get count for tags & trash
-
-            dash["tags-count"] = "0";
+            //get count for trash
             dash["trash-count"] = _trash.GetCount(User.userId).ToString();
             dash["admin-tools"] = User.userType == 1
                 ? "<li class=\"menu-divider\"></li><li class=\"root item-newuser row hover\"><a href=\"javascript:\" class=\"btn-newuser\"><span class=\"col icon small pad-width\"><svg viewBox=\"0 0 32 32\"><use xlink:href=\"#icon-add\" x=\"0\" y=\"0\" width=\"32\" height=\"32\"></use></svg></span><span>Add User</span></a></li><li class=\"root item-users row hover\"><a href=\"javascript:\" class=\"btn-users\"><span class=\"col icon small pad-width\"><svg viewBox=\"0 0 32 32\"><use xlink:href=\"#icon-user\" x=\"0\" y=\"0\" width=\"32\" height=\"32\"></use></svg></span><span>Users</span></a></li><li class=\"menu-divider\"></li>"

@@ -34,16 +34,6 @@
             </span>
         </li>
         {{books}}
-        <li class="root item-tags row hover">
-            <a href="javascript:">
-                <span class="col icon small pad-width">
-                    <svg viewBox="0 0 32 32">
-                        <use xlink:href="#icon-tag" x="0" y="0" width="32" height="32"></use>
-                    </svg>
-                </span>
-                <span>Tags <span class="faded pad-left-sm">({{tags-count}})</span></span>
-            </a>
-        </li>
         <li class="root item-trash row hover">
             <a href="javascript:">
                 <span class="col icon small pad-width">
@@ -90,7 +80,6 @@
 </div>
 <div class="subbar {{no-books}}">
     <div class="entries">{{entries}}</div>
-    <div class="tags hide"></div>
     <div class="trash hide"></div>
 </div>
 <div class="editor body hide {{no-entries}}">
@@ -99,7 +88,6 @@
         <textarea id="editor">{{editor-content}}</textarea>
     </div>
 </div>
-<div class="tag-details body hide"></div>
 <div class="trash-details body hide">
     <div class="selected-items hide pad">
         <h5>Selected Trash Items</h5>

@@ -3,9 +3,9 @@ S.dash = {
     init: function () {
         //buttons
         $('.btn-newbook').on('click', S.books.create.view);
-        $('.btn-newuser').on('click', S.users.create.view);
-        $('.btn-users').on('click', S.users.manage.view);
-        $('.item-trash > a').on('click', S.trash.view);
+        $('.item-newuser').on('click', S.users.create.view);
+        $('.item-users').on('click', S.users.manage.view);
+        $('.item-trash').on('click', S.trash.view);
         $('.btn-menu-books').on('click', S.menus.books.show);
         $('.btn-menu-chapters').on('click', S.menus.chapters.show);
         $('.btn-menu-page').on('click', S.menus.page.show);
@@ -22,7 +22,7 @@ S.dash = {
 
     hideAll: function () {
         $('.sidebar > .menu li.selected').removeClass('selected');
-        $('.body, .entries, .tags, .trash').addClass('hide');
+        $('.body, .entries, .trash').addClass('hide');
     }
 };
 
@@ -1108,14 +1108,6 @@ S.editor = {
                 return false;
             });
         }
-    }
-};
-
-/* Tags */
-S.tags = {
-    show: function () {
-        S.dash.hideAll();
-        $('.tags').show();
     }
 };
 
