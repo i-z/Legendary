@@ -1116,6 +1116,10 @@ S.trash = {
     init: function() {
         S.trash.resize();
         S.scrollbar.add($('.trash .container'), { touch: true });
+        $('.trash-details .btn-trash-delete-selected').off('click').on('click', S.trash.deleteSelected);
+        $('.trash-details .btn-trash-restore-selected').off('click').on('click', S.trash.restoreSelected);
+        $('.trash-details .btn-trash-delete-all').off('click').on('click', S.trash.deleteAll);
+        $('.trash-details .btn-trash-restore-all').off('click').on('click', S.trash.restoreAll);
     },
 
     resize: function () {
@@ -1144,6 +1148,64 @@ S.trash = {
         } else {
             $('.trash-details .selected-items').addClass('hide');
         }
+    },
+
+    selectedIds: function () {
+        var ids = [];
+        var elems = $('.trash .checkbox.checked');
+        for (var i = 0; i < elems.length; i++) {
+            var match = (elems[i].className || '').match(/checkbox-([a-z0-9\-]+)/i);
+            if (match && match[1]) {
+                ids.push(match[1]);
+            }
+        }
+        return ids;
+    },
+
+    deleteSelected: function (e) {
+        e.preventDefault();
+        var ids = S.trash.selectedIds();
+        if (ids.length == 0) { return false; }
+        if (!confirm('Permanently delete selected items? This cannot be undone.')) { return false; }
+        S.ajax.post('Trash/EmptySelected', { ids: ids.join(',') },
+            function () {
+                S.trash.view();
+            }
+        );
+        return false;
+    },
+
+    restoreSelected: function (e) {
+        e.preventDefault();
+        var ids = S.trash.selectedIds();
+        if (ids.length == 0) { return false; }
+        S.ajax.post('Trash/RestoreSelected', { ids: ids.join(',') },
+            function () {
+                S.trash.view();
+            }
+        );
+        return false;
+    },
+
+    deleteAll: function (e) {
+        e.preventDefault();
+        if (!confirm('Permanently delete all trash items? This cannot be undone.')) { return false; }
+        S.ajax.post('Trash/Empty', {},
+            function () {
+                S.trash.view();
+            }
+        );
+        return false;
+    },
+
+    restoreAll: function (e) {
+        e.preventDefault();
+        S.ajax.post('Trash/RestoreAll', {},
+            function () {
+                S.trash.view();
+            }
+        );
+        return false;
     }
 };
 

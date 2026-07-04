@@ -64,5 +64,69 @@ namespace Legendary.Data.Models
 
             _context.SaveChanges();
         }
+
+        public void EmptySelected(int userId, List<int> bookIds, List<(int bookId, int chapter)> chapterIds, List<int> entryIds)
+        {
+            if (bookIds != null && bookIds.Count > 0)
+            {
+                var books = _context.Books.Where(b => b.userId == userId && b.isTrashed && bookIds.Contains(b.bookId));
+                _context.Books.RemoveRange(books);
+            }
+
+            if (chapterIds != null && chapterIds.Count > 0)
+            {
+                foreach (var chapter in chapterIds)
+                {
+                    var ch = _context.Chapters.FirstOrDefault(c => c.bookId == chapter.bookId && c.chapter == chapter.chapter && c.isTrashed);
+                    if (ch != null)
+                    {
+                        _context.Chapters.Remove(ch);
+                    }
+                }
+            }
+
+            if (entryIds != null && entryIds.Count > 0)
+            {
+                var entries = _context.Entries.Where(e => e.userId == userId && e.isTrashed && entryIds.Contains(e.entryId));
+                _context.Entries.RemoveRange(entries);
+            }
+
+            _context.SaveChanges();
+        }
+
+        public void RestoreSelected(int userId, List<int> bookIds, List<(int bookId, int chapter)> chapterIds, List<int> entryIds)
+        {
+            if (bookIds != null && bookIds.Count > 0)
+            {
+                var books = _context.Books.Where(b => b.userId == userId && b.isTrashed && bookIds.Contains(b.bookId));
+                foreach (var b in books)
+                {
+                    b.isTrashed = false;
+                }
+            }
+
+            if (chapterIds != null && chapterIds.Count > 0)
+            {
+                foreach (var chapter in chapterIds)
+                {
+                    var ch = _context.Chapters.FirstOrDefault(c => c.bookId == chapter.bookId && c.chapter == chapter.chapter && c.isTrashed);
+                    if (ch != null)
+                    {
+                        ch.isTrashed = false;
+                    }
+                }
+            }
+
+            if (entryIds != null && entryIds.Count > 0)
+            {
+                var entries = _context.Entries.Where(e => e.userId == userId && e.isTrashed && entryIds.Contains(e.entryId));
+                foreach (var e in entries)
+                {
+                    e.isTrashed = false;
+                }
+            }
+
+            _context.SaveChanges();
+        }
     }
 }

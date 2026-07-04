@@ -39,12 +39,12 @@ namespace Legendary.Data.Models
             var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
             if (entry != null)
             {
-                _context.Entries.Remove(entry);
+                entry.isTrashed = true;
+                entry.datemodified = DateTime.UtcNow;
                 _context.SaveChanges();
-                return 1;
             }
 
-            return 0;
+            return _context.Entries.Count(e => e.userId == userId && e.isTrashed);
         }
 
         public void RestoreEntry(int userId, int entryId)
@@ -59,13 +59,13 @@ namespace Legendary.Data.Models
 
         public Entry GetDetails(int userId, int entryId)
         {
-            return _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            return _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId && !e.isTrashed);
         }
 
         public Entry GetFirst(int userId, int bookId, int sort = 0)
         {
             var query = _context.Entries
-                .Where(e => e.userId == userId && e.bookId == bookId);
+                .Where(e => e.userId == userId && e.bookId == bookId && !e.isTrashed);
 
             switch (sort)
             {
@@ -88,7 +88,7 @@ namespace Legendary.Data.Models
         public List<Entry> GetList(int userId, int bookId, int start = 1, int length = 50, int sort = 0)
         {
             var query = _context.Entries
-                .Where(e => e.userId == userId && e.bookId == bookId);
+                .Where(e => e.userId == userId && e.bookId == bookId && !e.isTrashed);
 
             switch (sort)
             {
@@ -118,7 +118,7 @@ namespace Legendary.Data.Models
 
         public void UpdateBook(int userId, int entryId, int bookId)
         {
-            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId && !e.isTrashed);
             if (entry != null)
             {
                 entry.bookId = bookId;
@@ -129,7 +129,7 @@ namespace Legendary.Data.Models
 
         public void UpdateChapter(int userId, int entryId, int chapter)
         {
-            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId && !e.isTrashed);
             if (entry != null)
             {
                 entry.chapter = chapter;
@@ -140,7 +140,7 @@ namespace Legendary.Data.Models
 
         public void UpdateSummary(int userId, int entryId, string summary)
         {
-            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId && !e.isTrashed);
             if (entry != null)
             {
                 entry.summary = summary;
@@ -151,7 +151,7 @@ namespace Legendary.Data.Models
 
         public void UpdateTitle(int userId, int entryId, string title)
         {
-            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId);
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && e.userId == userId && !e.isTrashed);
             if (entry != null)
             {
                 entry.title = title;
@@ -162,7 +162,7 @@ namespace Legendary.Data.Models
 
         public void Update(int entryId, int bookId, DateTime dateCreated, string title, string summary = "", int chapter = 0)
         {
-            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId);
+            var entry = _context.Entries.FirstOrDefault(e => e.entryId == entryId && !e.isTrashed);
             if (entry != null)
             {
                 entry.bookId = bookId;
