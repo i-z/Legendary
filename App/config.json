@@ -10,5 +10,13 @@
   "encryption": {
     "salt": "K9v3mX2pQ7rT8nL4cW1zH6yB5uD0fJ",
     "bcrypt_work_factor": "10"
+  },
+  "session": {
+    "expires": "60"
+  },
+  "bootstrapAdmin": {
+    "name": "CHANGE_ME_ADMIN_NAME",
+    "email": "admin@example.com",
+    "password": "CHANGE_ME_STRONG_PASSWORD_123!"
   }
 }

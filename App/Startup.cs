@@ -4,6 +4,7 @@ using Legendary.Data.Context;
 using Legendary.Data.Models;
 using Legendary.Services;
 using Legendary.ViewModels;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
@@ -22,6 +23,11 @@ namespace Legendary
 
         public virtual void ConfigureServices(IServiceCollection services)
         {
+            var dataProtectionPath = Path.Combine(AppContext.BaseDirectory, "DataProtection-Keys");
+            Directory.CreateDirectory(dataProtectionPath);
+            services.AddDataProtection()
+                .SetApplicationName("Legendary")
+                .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 
             services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlite("Data Source=app.db"));
@@ -92,9 +98,17 @@ namespace Legendary
                 (Server.IsDocker ? ".docker" : "") +
                 (Server.environment == Server.Environment.production ? ".prod" : "") + ".json";
 
-            config = new ConfigurationBuilder()
-                .AddJsonFile(Server.MapPath(configFile))
-                .AddEnvironmentVariables().Build();
+            var configBuilder = new ConfigurationBuilder();
+            var baseConfigPath = Server.MapPath("config.json");
+            var envConfigPath = Server.MapPath(configFile);
+            configBuilder.AddJsonFile(baseConfigPath, optional: false, reloadOnChange: true);
+            if (!string.Equals(baseConfigPath, envConfigPath, StringComparison.OrdinalIgnoreCase))
+            {
+                configBuilder.AddJsonFile(envConfigPath, optional: true, reloadOnChange: true);
+            }
+            config = configBuilder
+                .AddEnvironmentVariables()
+                .Build();
 
             Server.config = config;
 
