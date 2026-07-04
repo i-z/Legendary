@@ -4,6 +4,13 @@
             <use xlink:href="#logo" x="0" y="0" width="500" height="70"></use>
         </svg>
     </div>
+    <div class="top-menu">
+        <ul>
+            <li><a href="javascript:" class="btn-menu-books">Books</a></li>
+            <li><a href="javascript:" class="btn-menu-chapters">Chapters</a></li>
+            <li><a href="javascript:" class="btn-menu-page">Page</a></li>
+        </ul>
+    </div>
     <a class="logo-d" href="https://www.datasilk.io" target="_blank"><img src="/images/logo-D-xs.png" title="Datasilk" /></a>
 </header>
 <div class="upload-progress"></div>
@@ -48,6 +55,17 @@
             </a>
         </li>
         {{admin-tools}}
+        <li class="root item-entry-filter row">
+            <span class="col icon small pad-width">
+                <svg viewBox="0 0 32 32">
+                    <use xlink:href="#icon-files" x="0" y="0" width="32" height="32"></use>
+                </svg>
+            </span>
+            <label class="col entry-filter-label" for="chk-entry-filter">Only current chapter</label>
+            <span class="col right pad-width-sm pad-top-xs">
+                <input type="checkbox" id="chk-entry-filter" class="chk-entry-filter" checked />
+            </span>
+        </li>
 
         <li style="height:100px"></li>
 

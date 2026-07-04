@@ -67,10 +67,22 @@ namespace Legendary.Data.Models
             var query = _context.Entries
                 .Where(e => e.userId == userId && e.bookId == bookId);
 
-            if (sort == 1)
-                return query.OrderByDescending(e => e.sort).FirstOrDefault();
-
-            return query.OrderBy(e => e.sort).FirstOrDefault();
+            switch (sort)
+            {
+                case 1: // byNewest
+                    return query.OrderByDescending(e => e.datecreated).FirstOrDefault();
+                case 2: // byOldest
+                    return query.OrderBy(e => e.datecreated).FirstOrDefault();
+                case 3: // byTitle
+                    return query.OrderBy(e => e.title).FirstOrDefault();
+                case 0: // byChapter
+                default:
+                    return query
+                        .OrderBy(e => e.chapter)
+                        .ThenBy(e => e.sort)
+                        .ThenByDescending(e => e.datecreated)
+                        .FirstOrDefault();
+            }
         }
 
         public List<Entry> GetList(int userId, int bookId, int start = 1, int length = 50, int sort = 0)
@@ -78,10 +90,25 @@ namespace Legendary.Data.Models
             var query = _context.Entries
                 .Where(e => e.userId == userId && e.bookId == bookId);
 
-            if (sort == 1)
-                query = query.OrderByDescending(e => e.sort);
-            else
-                query = query.OrderBy(e => e.sort);
+            switch (sort)
+            {
+                case 1: // byNewest
+                    query = query.OrderByDescending(e => e.datecreated);
+                    break;
+                case 2: // byOldest
+                    query = query.OrderBy(e => e.datecreated);
+                    break;
+                case 3: // byTitle
+                    query = query.OrderBy(e => e.title);
+                    break;
+                case 0: // byChapter
+                default:
+                    query = query
+                        .OrderBy(e => e.chapter)
+                        .ThenBy(e => e.sort)
+                        .ThenByDescending(e => e.datecreated);
+                    break;
+            }
 
             return query
                 .Skip(start - 1)

@@ -65,6 +65,12 @@
     <None Update="Views\Dashboard\templates\newuser.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Views\Dashboard\templates\renamebook.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Views\Dashboard\templates\renameentry.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Views\Dashboard\templates\nobooks.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

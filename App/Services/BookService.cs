@@ -43,5 +43,23 @@ namespace Legendary.Services
             return html.ToString();
         }
 
+        public string RenameBook(int bookId, string title)
+        {
+            if (!CheckSecurity()) { return AccessDenied(); }
+            title = (title ?? "").Trim();
+            if (bookId <= 0 || title == "") { return BadRequest("Please provide a valid book title"); }
+
+            try
+            {
+                _bookModel.UpdateBook(User.userId, bookId, title);
+            }
+            catch (Exception)
+            {
+                return Error();
+            }
+
+            return Success();
+        }
+
     }
 }

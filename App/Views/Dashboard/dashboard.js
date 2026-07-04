@@ -6,6 +6,9 @@ S.dash = {
         $('.btn-newuser').on('click', S.users.create.view);
         $('.btn-users').on('click', S.users.manage.view);
         $('.item-trash > a').on('click', S.trash.view);
+        $('.btn-menu-books').on('click', S.menus.books.show);
+        $('.btn-menu-chapters').on('click', S.menus.chapters.show);
+        $('.btn-menu-page').on('click', S.menus.page.show);
 
         //events
         $(window).on('resize', S.entries.resize);
@@ -54,6 +57,87 @@ S.books = {
                 }
             );
 
+            return false;
+        }
+    },
+
+    rename: {
+        bookId: 0,
+        item: null,
+
+        prompt: function (e, elem) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            var trigger = $(elem);
+            var li = trigger.closest('li.book.sub');
+            if (li.length == 0) { return false; }
+
+            var bookId = parseInt(trigger.attr('data-bookid'));
+            if (!bookId || bookId <= 0) {
+                var idMatch = (li.attr('class') || '').match(/id-(\d+)/);
+                if (!idMatch) { return false; }
+                bookId = parseInt(idMatch[1]);
+            }
+
+            var currentTitle = li.find('a > span:last-child').first().text().trim();
+            S.books.rename.bookId = bookId;
+            S.books.rename.item = li;
+            S.books.rename.view(currentTitle);
+            return false;
+        },
+
+        view: function (title) {
+            var view = new S.view($('#template_renamebook').html());
+            var popup = S.popup.show('Rename Book', view.render(), { width: 350 });
+            var currentTitle = (title || '').trim();
+            if (currentTitle == '' && S.books.rename.item != null) {
+                currentTitle = S.books.rename.item.find('a > span:last-child').first().text().trim();
+            }
+            popup.find('#txtbook_rename_title')
+                .val(currentTitle)
+                .attr('placeholder', currentTitle)
+                .focus()
+                .select();
+            popup.find('form').off('submit').on('submit', S.books.rename.submit);
+        },
+
+        submit: function (e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.cancelBubble = true;
+            }
+            var newTitle = $('#txtbook_rename_title').val().trim();
+            if (newTitle == '') {
+                S.message.show('.popup .message', 'error', 'Please provide a title for your book');
+                return false;
+            }
+
+            S.ajax.post('Books/RenameBook', { bookId: S.books.rename.bookId, title: newTitle },
+                function () {
+                    S.ajax.post('Books/GetBooksList', {},
+                        function (booksHtml) {
+                            $('.menu .sub.book').remove();
+                            $('.menu .item-books').after(booksHtml);
+                            $('ul.menu li.book.id-' + S.books.rename.bookId).addClass('selected');
+                            if (S.books.rename.bookId == S.entries.bookId) {
+                                S.entries.view(S.entries.bookId, true);
+                            } else {
+                                S.popup.hide();
+                            }
+                        },
+                        function (err) {
+                            S.message.show('.popup .message', 'error', err);
+                        }
+                    );
+                },
+                function (err) {
+                    S.message.show('.popup .message', 'error', err);
+                }
+            );
             return false;
         }
     }
@@ -160,6 +244,72 @@ S.users = {
 /* Entries */
 S.entries = {
     bookId: 0,
+    filterByChapter: true,
+    rename: {
+        entryId: 0,
+        item: null,
+
+        prompt: function (e, elem) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            var trigger = $(elem);
+            var row = trigger.closest('.entry');
+            if (row.length == 0) { return false; }
+
+            var entryId = parseInt(trigger.attr('data-entryid'));
+            if (!entryId || entryId <= 0) {
+                entryId = S.entries.getId(row);
+            }
+            if (!entryId || entryId <= 0) { return false; }
+
+            var currentTitle = row.find('h5').first().text().trim();
+            S.entries.rename.entryId = entryId;
+            S.entries.rename.item = row;
+            S.entries.rename.view(currentTitle);
+            return false;
+        },
+
+        view: function (title) {
+            var view = new S.view($('#template_renameentry').html());
+            var popup = S.popup.show('Rename Entry', view.render(), { width: 350 });
+            var currentTitle = (title || '').trim();
+            if (currentTitle == '' && S.entries.rename.item != null) {
+                currentTitle = S.entries.rename.item.find('h5').first().text().trim();
+            }
+            popup.find('#txtentry_rename_title')
+                .val(currentTitle)
+                .attr('placeholder', currentTitle)
+                .focus()
+                .select();
+            popup.find('form').off('submit').on('submit', S.entries.rename.submit);
+        },
+
+        submit: function (e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.cancelBubble = true;
+            }
+            var newTitle = $('#txtentry_rename_title').val().trim();
+            if (newTitle == '') {
+                S.message.show('.popup .message', 'error', 'Please provide a title for your entry');
+                return false;
+            }
+
+            S.ajax.post('Entries/RenameEntry', { entryId: S.entries.rename.entryId, title: newTitle },
+                function () {
+                    S.entries.view(S.entries.bookId, true);
+                },
+                function (err) {
+                    S.message.show('.popup .message', 'error', err);
+                }
+            );
+            return false;
+        }
+    },
 
     init: function () {
         S.entries.bindEvents();
@@ -169,6 +319,14 @@ S.entries = {
     },
 
     bindEvents: function () {
+        var filterToggle = $('.sidebar .chk-entry-filter');
+        filterToggle.prop('checked', S.entries.filterByChapter);
+        filterToggle.off('change');
+        filterToggle.on('change', function () {
+            S.entries.filterByChapter = $(this).is(':checked');
+            S.entries.applyChapterFilter();
+        });
+
         //bind events to chapters list
         $('.chapter .expander').on('click', (e) => {
             var chapter = $(e.target).parents('.chapter').first();
@@ -183,6 +341,40 @@ S.entries = {
                 chapter.addClass('expanded');
             }
         });
+
+        S.entries.applyChapterFilter();
+    },
+
+    getSelectedChapterId: function () {
+        var selected = $('.entries .entry.selected').first();
+        if (selected.length == 0) { return 0; }
+        var match = (selected.attr('class') || '').match(/chapter-(\d+)/);
+        if (!match) { return 0; }
+        return parseInt(match[1]) || 0;
+    },
+
+    applyChapterFilter: function () {
+        var items = $('.entries .entry');
+        var chapters = $('.entries .chapter');
+        if (items.length == 0) { return; }
+
+        if (!S.entries.filterByChapter) {
+            items.show();
+            chapters.addClass('expanded');
+            return;
+        }
+
+        var chapterId = S.entries.getSelectedChapterId();
+        if (chapterId <= 0) {
+            items.show();
+            chapters.removeClass('expanded');
+            return;
+        }
+
+        items.hide();
+        items.filter('.chapter-' + chapterId).show();
+        chapters.removeClass('expanded');
+        chapters.filter('.chapter-' + chapterId).addClass('expanded');
     },
 
     resize: function () {
@@ -206,7 +398,8 @@ S.entries = {
             }
         } else {
             //load list of entries
-            var data = { bookId: id, entryId: S.editor.entryId || 0, start: 1, length: 500, sort: 0};
+            var selectedEntryId = (id == S.entries.bookId) ? (S.editor.entryId || 0) : 0;
+            var data = { bookId: id, entryId: selectedEntryId, start: 1, length: 500, sort: 0};
             S.ajax.post('Entries/GetList', data,
                 function (d) {
                     S.dash.hideAll();
@@ -645,6 +838,7 @@ S.editor = {
                 S.editor.setContent(d);
                 $('.entries .entry.selected').removeClass('selected');
                 $('.entries .entry.entryid-' + entryId).addClass('selected');
+                S.entries.applyChapterFilter();
                 var win = S.window.pos();
                 if ($('.subbar.show-card').length > 0 && win.w <= 895) {
                     //mobile view, show page

@@ -1,6 +1,15 @@
-<div class="row hover entry entryid-{{id}} chapter-{{chapter-id}} {{selected}}" {{hide-entry}}style="display:none"{{/hide-entry}}>
-    <div class="col pad" onclick="S.editor.getContent({{id}})">
-        <div class="row pad-bottom-sm"><h5>{{title}}</h5></div>
+<div class="row hover entry entryid-{{id}} chapter-{{chapter-id}} {{selected}}" onclick="S.editor.getContent({{id}})" {{hide-entry}}style="display:none"{{/hide-entry}}>
+    <div class="col pad">
+        <div class="row pad-bottom-sm">
+            <div class="col"><h5>{{title}}</h5></div>
+            <div class="col right icon small">
+                <a href="javascript:" title="Rename Entry" onclick="return S.entries.rename.prompt(event, this);" data-entryid="{{id}}">
+                    <svg viewBox="0 0 32 32">
+                        <use xlink:href="#icon-pencil" x="0" y="0" width="32" height="32"></use>
+                    </svg>
+                </a>
+            </div>
+        </div>
         <span class="date-created">{{date-created}}</span>
         <span class="summary">{{summary}}</span>
     </div>

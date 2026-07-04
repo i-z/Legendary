@@ -211,6 +211,18 @@ namespace Legendary.ViewModels
             return _entryModel.TrashEntry(userId, entryId);
         }
 
+        public void RenameEntry(int userId, int entryId, string title)
+        {
+            try
+            {
+                _entryModel.UpdateTitle(userId, entryId, title);
+            }
+            catch (Exception)
+            {
+                throw new ServiceErrorException("Error renaming entry");
+            }
+        }
+
         private byte[] GetBytes(string str)
         {
             byte[] bytes = new byte[str.Length * sizeof(char)];

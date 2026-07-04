@@ -106,5 +106,22 @@ namespace Legendary.Services
             }
         }
 
+        public string RenameEntry(int entryId, string title)
+        {
+            if (!CheckSecurity()) { return AccessDenied(); }
+            title = (title ?? "").Trim();
+            if (entryId <= 0 || title == "") { return BadRequest("Please provide a valid entry title"); }
+
+            try
+            {
+                _entryViewModel.RenameEntry(User.userId, entryId, title);
+                return Success();
+            }
+            catch (ServiceErrorException ex)
+            {
+                return Error(ex.Message);
+            }
+        }
+
     }
 }
